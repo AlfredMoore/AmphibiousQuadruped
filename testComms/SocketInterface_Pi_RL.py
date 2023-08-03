@@ -8,7 +8,7 @@ import numpy as np
 from typing import List, Tuple, Dict
 
 from src.Utilities import deadband, clipped_first_order_filter
-from pupper.Config import Configuration
+# from pupper.Config import Configuration
 
  
 class SocketInterface_Pi:
@@ -21,7 +21,7 @@ class SocketInterface_Pi:
         # HOST_IP = "192.168.31.87" 
         # HOST_PORT = 8888
 
-        self.config = Configuration()
+        # self.config = Configuration()
 
         self.message_rate = 50
 

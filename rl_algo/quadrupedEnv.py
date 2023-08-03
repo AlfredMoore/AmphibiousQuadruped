@@ -1,6 +1,5 @@
 import numpy as np
 import gymnasium as gym
-import os
 from gymnasium import spaces
 
 from stable_baselines3.common.env_checker import check_env
@@ -34,9 +33,9 @@ class QuadrupEnv(gym.Env):
 
     # Define constants for clearer code
     # TODO: Modify MAX_RATE
-    ABDUCTION_MAX_ANGULAR_VELOCITY = 5
-    INNER_MAX_ANGULAR_VELOCITY = 10
-    OUTER_MAX_ANGULAR_VELOCITY = 10
+    ABDUCTION_JOINT_MAX_RATE = 5
+    INNER_JOINT_MAX_RATE = 10
+    OUTER_JOINT_MAX_RATE = 10
     QUATERNION_BOUND = 1.0
 
     def __init__(self):
@@ -86,18 +85,17 @@ class QuadrupEnv(gym.Env):
             low=obs_low_12, high=obs_high_12, shape=obs_shape, dtype=np.float32
         )
         
-        # init socket connection
-        socket_PC = SocketInterface_PC(SERVER_IP="192.168.31.52", SERVER_PORT=50000)
-        
-        # init servo 
-        os.system("sudo pigpiod")
-
         # initialize servo degree
         self.init_servo_degree = np.array([[  0,  0,  0,  0],
                                            [ 45, 45, 45, 45],
                                            [-45,-45,-45,-45]])
         
         self.servo_degree = 1.0 * self.init_servo_degree
+        
+        # init socket connection
+        
+        # init servo 
+        
 
 
     def reset(self, seed=None, options=None):
@@ -127,18 +125,20 @@ class QuadrupEnv(gym.Env):
 
         # TODO: convert the action into servo degree and send msg to the RPi
         # action shape should be (3,4) or (3,)
-        servo_max_angular_velocity = np.array([self.ABDUCTION_MAX_ANGULAR_VELOCITY, 
-                                          self.INNER_MAX_ANGULAR_VELOCITY,
-                                          self.OUTER_MAX_ANGULAR_VELOCITY])
+        servo_degree_max_rate = np.array([self.ABDUCTION_JOINT_MAX_RATE, 
+                                          self.INNER_JOINT_MAX_RATE,
+                                          self.OUTER_JOINT_MAX_RATE])
         
         if action.shape == (3,):
-            servo_degree_diff = servo_max_angular_velocity * action
+            servo_degree_diff = servo_degree_max_rate * action
             self.servo_degree += servo_degree_diff
             
         elif action.shape == (3,4):
-            servo_degree_diff = np.tile( servo_max_angular_velocity.reshape((3,1)), (1,4) )
+            servo_degree_diff = np.tile( servo_degree_max_rate.reshape((3,1)), (1,4) )
             self.servo_degree += servo_degree_diff
         
+
+
 
         # TODO: what is the cornor case of terminated,
         # too large IMU difference, drift from the supposed line?
