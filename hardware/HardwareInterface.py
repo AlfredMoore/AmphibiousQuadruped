@@ -1,5 +1,5 @@
 import pigpio
-from pupper.Config import ServoParams, PWMParams
+from hardware.Config import ServoParams, PWMParams
 
 
 class HardwareInterface:

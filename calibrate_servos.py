@@ -1,5 +1,5 @@
-from pupper.HardwareInterface import HardwareInterface
-from pupper.Config import PWMParams, ServoParams
+from hardware.HardwareInterface import HardwareInterface
+from hardware.Config import PWMParams, ServoParams
 import numpy as np
 import re
 import time
@@ -171,7 +171,7 @@ import numpy as np
     formatted_matrix_with_required_commas = p2.sub("],\n", partially_formatted_matrix)
 
     # Overwrite pupper/ServoCalibration.py file with modified values
-    with open("pupper/ServoCalibration.py", "w") as f:
+    with open("config/ServoCalibration.py", "w") as f:
         print(preamble, file = f)
         print("MICROS_PER_RAD = {:.3f} * 180.0 / np.pi".format(degrees_to_radians(servo_params.micros_per_rad)), file = f)
         print("NEUTRAL_ANGLE_DEGREES = np.array(", file = f)

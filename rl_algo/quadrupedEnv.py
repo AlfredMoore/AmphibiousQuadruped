@@ -32,57 +32,85 @@ class QuadrupEnv(gym.Env):
     # metadata = {"render_modes": ["console"]}
 
     # Define constants for clearer code
-    # TODO: Modify MAX_RATE
-    ABDUCTION_JOINT_MAX_RATE = 5
-    INNER_JOINT_MAX_RATE = 10
-    OUTER_JOINT_MAX_RATE = 10
-    QUATERNION_BOUND = 1.0
+    
+    GRAVITY = 9.8
+    IMU_data_range = {"acceleration":16 * GRAVITY, "angular velocity":2000, 
+                        "RollPitchYaw":180, "Quaterions":1}
 
-    def __init__(self):
+    def __init__(self, quadruped_mode=True, tradeoff_param=0.5, empirical_model=False ):
+        """
+        quadruped_mode(bool): Control of single leg or the quadruped_mode
+        tradeoff_param(float): param * speed + (1-param) * stability
+        empirical_model(bool): use empirical model of the thrust from joint angle
+        """
+        
         super(QuadrupEnv, self).__init__()
 
         # Define action and observation space
         # They must be gym.spaces objects
         
-        self.TRADEOFF_PARAM = 0.5
+        self.TRADEOFF_PARAM = tradeoff_param
         
         # Action Space Params
-        action_shape_3 = (3,)
-        action_low_3 = np.array([-1.0,-1.0,-1.0])
-        action_high_3 = np.array([1.0,1.0,1.0])
+        if quadruped_mode:
+            # quadruped_mode mode
+            action_shape = (3,4)
+            action_shape_flatten = action_shape[0] * action_shape[1]
+            # quadruped_mode joint angle
+            action_low = -1.0 * np.ones(action_shape)
+            action_low_flatten = action_low.flatten
+            
+            action_high = np.ones(action_shape)
+            action_high_flatten = action_high.flatten
         
-        action_shape_12 = (3,4)
-        action_low_12 = np.array([[-1.0,-1.0,-1.0,-1.0],
-                                  [-1.0,-1.0,-1.0,-1.0],
-                                  [-1.0,-1.0,-1.0,-1.0]])
+        else:
+            # single leg mode
+            action_shape = (3,)
+            action_low_flatten = -1.0 * np.ones(action_shape)
+            action_high_flatten = np.ones(action_shape)
         
-        action_high_12 = np.array([[1.0, 1.0, 1.0, 1.0],
-                                   [1.0, 1.0, 1.0, 1.0],
-                                   [1.0, 1.0, 1.0, 1.0]])
+        
         
         self.action_space = spaces.Box(
-            low=action_low_12, high=action_high_12, 
-            shape=action_shape_12, dtype=np.float32
+            low=action_low_flatten, high=action_high_flatten, 
+            shape=action_shape, dtype=np.float32
             )
         
-        # The observation will be the coordisabilitynate of the agent
-        # this can be described both by Discrete and Box space
         
-        # Observation Space Param -- data from IMU and sensors(optional)
-        obs_shape = (4,)    # quaternions
-        obs_low_3 = np.array([-1.0,-1.0,-1.0,-1.0])
-        obs_high_3 = np.array([1.0, 1.0, 1.0, 1.0])
+        # Observation Space Param -- data from IMU, other sensors and empirical_model
+        IMU_shape = (13,)     # 3+3+3+4=13
         
-        obs_low_12 = np.array([[-1.0,-1.0,-1.0,-1.0],
-                               [-1.0,-1.0,-1.0,-1.0],
-                               [-1.0,-1.0,-1.0,-1.0]])
+        acceleration_range = np.array([self.IMU_data_range["acceleration"]]*3)
+        angular_velocity_range = np.array([self.IMU_data_range["angular velocity"]]*3)
+        RPY_range = np.array([self.IMU_data_range["RollPitchYaw"]]*3)
+        Quaterions_range = np.array([self.IMU_data_range["Quaterions"]]*4)
         
-        obs_high_12 = np.array([[1.0, 1.0, 1.0, 1.0],
-                                [1.0, 1.0, 1.0, 1.0],
-                                [1.0, 1.0, 1.0, 1.0]])
+        IMU_range = np.concatenate((acceleration_range, angular_velocity_range, RPY_range, Quaterions_range), axis=0)
+        
+        # data structure from IMU
+        # 0x34 - 0x36 : xyz_accelerations
+        # 0x37 - 0x39 : xyz_angular_velocity
+        # 0x3d - 0x3f : Roll_Pitch_Yaw_xyz
+        # 0x51 - 0x54 : Quaterions Q0-Q3
+        
+        if empirical_model:
+            if quadruped_mode:
+                empirical_thrust_shape = (4,)
+                empirical_thrust_range = np.array([10]*4)
+            else:
+                empirical_thrust_shape = (1,)
+                empirical_thrust_range = np.array([10])
+                
+            obs_range = np.concatenate((IMU_range, empirical_thrust_range), axis=0)
+                
+        else:
+            empirical_thrust_shape = (0,)
+            obs_range = IMU_range
+                
+        obs_shape = (IMU_shape[0] + empirical_thrust_shape[0], )
         
         self.observation_space = spaces.Box(
-            low=obs_low_12, high=obs_high_12, shape=obs_shape, dtype=np.float32
+            low=obs_range * 1.0, high=obs_range * -1.0, shape=obs_shape, dtype=np.float32
         )
         
         # initialize servo degree

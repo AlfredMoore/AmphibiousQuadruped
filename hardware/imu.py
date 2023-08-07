@@ -4,10 +4,6 @@ import time
 # import types
 # import ctypes
 
-from imu import ImuInterface_I2C
-
-def fun_a():
-    pass
 
 class ImuInterface_I2C(object):
     def __init__(self, addr=0x50, i2cbus=0):
