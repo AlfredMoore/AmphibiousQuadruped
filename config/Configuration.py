@@ -27,6 +27,39 @@ class PPO_config:
         self.use_orthogonal_init = True            # bool, default=True, help="Trick 8: orthogonal initialization")
         self.set_adam_eps = True                   # float, default=True, help="Trick 9: set Adam epsilon=1e-5")
         self.use_tanh = int(1)                       # float, default=True, help="Trick 10: tanh activation function")
+
+
+class Env_config:
+    def __init__(self) -> None:
+        self.quadruped_mode=True
+        self.tradeoff_param=0.5
+        self.empirical_model=False
+
+        
+
+class IMU_config:
+    def __init__(self) -> None:
+        self.addr=0x50
+        self.i2cbus=0
+        self.GRAVITY = 9.8
+        self.buffer = {"acceleration":0x34, "angular velocity":0x37, 
+                       "RollPitchYaw":0x3d, "Quaterions":0x51}
+        self.data_range = {"acceleration":16 * self.GRAVITY, "angular velocity":2000, 
+                           "RollPitchYaw":180, "Quaterions":1}
+        # data structure from IMU
+        # 0x34 - 0x36 : xyz_accelerations
+        # 0x37 - 0x39 : xyz_angular_velocity
+        # 0x3d - 0x3f : Roll_Pitch_Yaw_xyz
+        # 0x51 - 0x54 : Quaterions Q0-Q3
+
+
+class Socket_config:
+    def __init__(self) -> None:
+        
+        self.HOST_IP = "192.168.31.52"
+        self.HOST_PORT = 50000
+        self.message_rate = 50
+
         
 
 
@@ -35,6 +68,7 @@ class PWMParams:
         self.pins = np.array([[2, 14, 18, 23], [3, 15, 27, 24], [4, 17, 22, 25]])
         self.range = 4000
         self.freq = 250
+
 
 
 class ServoParams:

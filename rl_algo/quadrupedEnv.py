@@ -2,11 +2,6 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 
-from stable_baselines3.common.env_checker import check_env
-
-from testComms.SocketInterface_Pi_RL import SocketInterface_PC
-
-
 
 def stability_evaluation(quaternion):
     # TODO: read article and calculate sability
@@ -22,9 +17,9 @@ def speed_evaluation(quaternion):
     return speed_reward
 
 
-class QuadrupEnv(gym.Env):
+class QuadruppedEnv(gym.Env):
     """
-    Custom Environment that follows gym interface.
+    Customize Environment that follows gym interface.
     This is a simple env where the agent must learn to go always left.
     """
 
@@ -33,26 +28,25 @@ class QuadrupEnv(gym.Env):
 
     # Define constants for clearer code
     
-    GRAVITY = 9.8
-    IMU_data_range = {"acceleration":16 * GRAVITY, "angular velocity":2000, 
-                        "RollPitchYaw":180, "Quaterions":1}
-
-    def __init__(self, quadruped_mode=True, tradeoff_param=0.5, empirical_model=False ):
+    def __init__(self,  Env_config, IMU_config):
         """
         quadruped_mode(bool): Control of single leg or the quadruped_mode
         tradeoff_param(float): param * speed + (1-param) * stability
         empirical_model(bool): use empirical model of the thrust from joint angle
         """
         
-        super(QuadrupEnv, self).__init__()
+        super(QuadruppedEnv, self).__init__()
 
         # Define action and observation space
         # They must be gym.spaces objects
+        self.quadruped_mode = Env_config.quadruped_mode
+        self.empirical_model = Env_config.empirical_model
+        self.TRADEOFF_PARAM = Env_config.tradeoff_param
         
-        self.TRADEOFF_PARAM = tradeoff_param
+        self.IMU_data_range = IMU_config.data_range
         
         # Action Space Params
-        if quadruped_mode:
+        if self.quadruped_mode:
             # quadruped_mode mode
             action_shape = (3,4)
             action_shape_flatten = action_shape[0] * action_shape[1]
@@ -68,7 +62,6 @@ class QuadrupEnv(gym.Env):
             action_shape = (3,)
             action_low_flatten = -1.0 * np.ones(action_shape)
             action_high_flatten = np.ones(action_shape)
-        
         
         
         self.action_space = spaces.Box(
@@ -93,8 +86,8 @@ class QuadrupEnv(gym.Env):
         # 0x3d - 0x3f : Roll_Pitch_Yaw_xyz
         # 0x51 - 0x54 : Quaterions Q0-Q3
         
-        if empirical_model:
-            if quadruped_mode:
+        if self.empirical_model:
+            if self.quadruped_mode:
                 empirical_thrust_shape = (4,)
                 empirical_thrust_range = np.array([10]*4)
             else:

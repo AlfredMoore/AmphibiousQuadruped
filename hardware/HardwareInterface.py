@@ -1,9 +1,8 @@
 import pigpio
-from hardware.Config import ServoParams, PWMParams
-
+import numpy as np
 
 class HardwareInterface:
-    def __init__(self):
+    def __init__(self, ServoParams, PWMParams):
         self.pi = pigpio.pi()
         self.pwm_params = PWMParams()
         self.servo_params = ServoParams()
@@ -11,6 +10,9 @@ class HardwareInterface:
 
     def set_actuator_postions(self, joint_angles):
         send_servo_commands(self.pi, self.pwm_params, self.servo_params, joint_angles)
+        
+    def set_actuator_postions_radians(self, joint_angles):
+        self.set_actuator_postions( self, degrees_to_radians(joint_angles) )
     
     def set_actuator_position(self, joint_angle, axis, leg):
         send_servo_command(self.pi, self.pwm_params, self.servo_params, joint_angle, axis, leg)
@@ -101,3 +103,19 @@ def deactivate_servos(pi, pwm_params):
     for leg_index in range(4):
         for axis_index in range(3):
             pi.set_PWM_dutycycle(pwm_params.pins[axis_index, leg_index], 0)
+
+
+def degrees_to_radians(input_array):
+    """Converts degrees to radians.
+    
+    Parameters
+    ----------
+    input_array :  Numpy array or float
+        Degrees
+    
+    Returns
+    -------
+    Numpy array or float
+        Radians
+    """
+    return input_array * np.pi / 180.0

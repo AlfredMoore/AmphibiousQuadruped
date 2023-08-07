@@ -7,23 +7,25 @@ import json
 import numpy as np
 from typing import List, Tuple, Dict
 
-from src.Utilities import deadband, clipped_first_order_filter
-# from pupper.Config import Configuration
-
  
 class SocketInterface_Pi:
-    def __init__(self, HOST_IP="192.168.31.52", HOST_PORT=50000) -> None:
+    
+    """
+    subscriber_cmd()
+    publisher_env(msg_state:Dict)
+    get_command(self, msg, do_print=False), msg={"servo_degree": np.array, "info": Dict}
+    """
+    def __init__(self, Socket_config ) -> None:
         
         # parameters
-        self.HOST_IP = HOST_IP
-        self.HOST_PORT = HOST_PORT
+        self.HOST_IP = Socket_config.HOST_IP
+        self.HOST_PORT = Socket_config.HOST_PORT
+        self.message_rate = Socket_config.message_rate
+        
         # # IP address of Rasberry Pi
-        # HOST_IP = "192.168.31.87" 
-        # HOST_PORT = 8888
-
-        # self.config = Configuration()
-
-        self.message_rate = 50
+        # self.HOST_IP = "192.168.31.52"
+        # self.HOST_PORT = 50000
+        # self.message_rate = 50
 
 
         # socket connection

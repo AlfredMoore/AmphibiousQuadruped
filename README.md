@@ -1,20 +1,34 @@
 # Amphibious Quadruped
 
-# RL swimming quadrruped robot
+## Get a dog-like robot swim fast, stably, and robustly
 
-Model-free RL algorithm
-
-Socket Communication
+### features
 
 12 freedom degree
 
-Learning to swim stably and fast
+PWM servos control
+
+Raspberry Pi 4B
+
+All Python
+
+### implementation
+
+Socket Communication
+
+Reinforcement Learning algorithm (PPO continuous with many tricks for performence)
+
+Customized Gym Environment
+
+IMU (9-axis)
+
+## Future
 
 TODO:
 
-How to learn more efficiently ? (RL policy)
+How to learn more efficiently ? (pretrain actor with expert data)
 
-How to evaluate speed and stability ? (Reward)
+How to evaluate speed and stability ? (Reward: Tilt and sway experiment)
 
 How to trade off speed and stability ? (Reward)
 

@@ -1,20 +1,22 @@
 import smbus
 import time
+import numpy as np
 # import math
 # import types
 # import ctypes
 
 
-class ImuInterface_I2C(object):
-    def __init__(self, addr=0x50, i2cbus=0):
-        self.addr = addr
+class ImuInterface_I2C:
+    """
+    addr=0x50, i2cbus=0
+    """
+    def __init__(self, IMU_config):
+        self.addr = IMU_config.addr
         # i2c_0
-        self.i2c = smbus.SMBus(i2cbus)
-        GRAVITY = 9.8
-        self.buffer = {"acceleration":0x34, "angular velocity":0x37, 
-                       "RollPitchYaw":0x3d, "Quaterions":0x51}
-        self.data_range = {"acceleration":16 * GRAVITY, "angular velocity":2000, 
-                           "RollPitchYaw":180, "Quaterions":1}
+        self.i2c = smbus.SMBus(IMU_config.i2cbus)
+        GRAVITY = IMU_config.GRAVITY
+        self.buffer = IMU_config.buffer
+        self.data_range = IMU_config.data_range
 
         
     def get_data_xyz(self, package_head: int, data_range: int):
@@ -86,6 +88,21 @@ class ImuInterface_I2C(object):
                 data_q3 -= 2 * data_range
             
             return (data_q0, data_q1, data_q2, data_q3)
+    
+        
+    def read_all(self) -> np.ndarray:
+            
+        obs_acceleration = np.array(self.get_data_xyz(package_head=self.buffer["acceleration"], 
+                                             data_range=self.data_range["acceleration"]))
+        obs_angular_vole = np.array(self.get_data_xyz(package_head=self.buffer["angular velocity"],
+                                             data_range=self.data_range["angular velocity"]))
+        obs_RollPitchYaw = np.array(self.get_data_xyz(package_head=self.buffer["RollPitchYaw"],
+                                             data_range=self.data_range["RollPitchYaw"]))
+        obs_quaterions = np.array(self.get_data_quaterions(package_head=self.buffer["Quaterions"],
+                                                  data_range=self.data_range["Quaterions"]))
+        
+        return np.concatenate((obs_acceleration,obs_angular_vole,obs_RollPitchYaw,obs_quaterions), 
+                              axis=0)
             
             
 if __name__ == "__main__":

@@ -7,13 +7,17 @@ from typing import List, Tuple, Dict
 
 
 class SocketInterface_PC:
+    """
+    subscriber_env()
+    publisher_cmd(command:Dict)
+    """
 
-    def __init__(self, SERVER_IP="192.168.31.52", SERVER_PORT=50000) -> None:
-        self.SERVER_IP = SERVER_IP
-        self.SERVER_PORT = SERVER_PORT
-        # # IP address of Rasberry Pi
-        # SERVER_IP = "192.168.31.87"
-        # SERVER_PORT = 8888
+    def __init__(self, Socket_config) -> None:
+        self.SERVER_IP = Socket_config.HOST_IP
+        self.SERVER_PORT = Socket_config.HOST_PORT
+        # IP address of Rasberry Pi
+        # self.HOST_IP = "192.168.31.52"
+        # self.HOST_PORT = 50000
     
         print("Starting socket: TCP...")
         self.server_addr = (self.SERVER_IP, self.SERVER_PORT)
