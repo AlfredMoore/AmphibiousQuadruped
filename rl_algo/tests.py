@@ -6,9 +6,10 @@
 
 # print(mu)
 
-# import sys
-# print(sys.path)
+import sys
 
-from rl_algo import tests1
+# from rl_algo import RL_config
+import RL_config
 
-tests.check_path()
+def check_path():
+    print(sys.path)
