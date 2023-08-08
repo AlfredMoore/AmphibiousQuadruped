@@ -1,16 +1,17 @@
 import numpy as np
 import gymnasium as gym
+import time
 from gymnasium import spaces
 
 
-def stability_evaluation(quaternion):
+def stability_evaluation(imu_data):
     # TODO: read article and calculate sability
     
     stability_reward = None
     return stability_reward
 
 
-def speed_evaluation(quaternion):
+def speed_evaluation(imu_data):
     # TODO: calculate speed
     
     speed_reward = None
@@ -28,10 +29,10 @@ class QuadruppedEnv(gym.Env):
 
     # Define constants for clearer code
     
-    def __init__(self,  Env_config, IMU_config):
+    def __init__(self,  Env_config, IMU_config, Socket_config, socket_handler ):
         """
         quadruped_mode(bool): Control of single leg or the quadruped_mode
-        tradeoff_param(float): param * speed + (1-param) * stability
+        tradeoff_param(Dict): {"speed": a, "stability": b, "thrust": c}
         empirical_model(bool): use empirical model of the thrust from joint angle
         """
         
@@ -42,30 +43,34 @@ class QuadruppedEnv(gym.Env):
         self.quadruped_mode = Env_config.quadruped_mode
         self.empirical_model = Env_config.empirical_model
         self.TRADEOFF_PARAM = Env_config.tradeoff_param
+        self.max_steps = Env_config.max_steps
         
         self.IMU_data_range = IMU_config.data_range
+        
+        self.socket_handler = socket_handler
+        self.Socket_config = Socket_config
+        
+        self.step_counter = 0
         
         # Action Space Params
         if self.quadruped_mode:
             # quadruped_mode mode
             action_shape = (3,4)
-            action_shape_flatten = action_shape[0] * action_shape[1]
+            action_shape = action_shape[0] * action_shape[1]
             # quadruped_mode joint angle
-            action_low = -1.0 * np.ones(action_shape)
-            action_low_flatten = action_low.flatten
-            
+            action_low = -1.0 * np.ones(action_shape)  
             action_high = np.ones(action_shape)
-            action_high_flatten = action_high.flatten
+
         
         else:
             # single leg mode
             action_shape = (3,)
-            action_low_flatten = -1.0 * np.ones(action_shape)
-            action_high_flatten = np.ones(action_shape)
+            action_low = -1.0 * np.ones(action_shape)
+            action_high = np.ones(action_shape)
         
         
         self.action_space = spaces.Box(
-            low=action_low_flatten, high=action_high_flatten, 
+            low=action_low, high=action_high, 
             shape=action_shape, dtype=np.float32
             )
         
@@ -110,79 +115,109 @@ class QuadruppedEnv(gym.Env):
         self.init_servo_degree = np.array([[  0,  0,  0,  0],
                                            [ 45, 45, 45, 45],
                                            [-45,-45,-45,-45]])
+        action = 1.0 * self.init_servo_degree
         
-        self.servo_degree = 1.0 * self.init_servo_degree
+        # action to init
+        # 1. send a cmd that indicates what's next
+        cmd = {"next":self.Socket_config.next_action, "action": None, "info": None, "message": "Quadrupped Env init"}
+        self.socket_PC.publisher_cmd( command=cmd )
         
-        # init socket connection
-        
-        # init servo 
+        # 2. send action or receive state
+        cmd = {"next": None, "action": action, "info": None, "message": None}
+        self.socket_PC.publisher_cmd( command=cmd )
         
 
 
     def reset(self, seed=None, options=None):
         """
         Important: the observation must be a numpy array
-        :return: (np.array)
+        return: obs: (imu, thrust), info: dict
         """
         super().reset(seed=seed, options=options)
 
         # TODO: send msg that set the servo to [0, -45, 45]
         # initialize the env and the policy
         
-        
+        self.step_counter = 0
         # initialize servo degree
-        self.servo_degree = 1.0 * self.init_servo_degree
-
+        action = 1.0 * self.init_servo_degree
         
-        # return (obs, info)
-        return np.array([0,0,0,0]).astype(np.float32), {}  # quaternion, empty info dict
+        # init socket connection and init servo
+        # action to reset
+        # 1. send a cmd that indicates what's next
+        cmd = {"next":self.Socket_config.next_action, "action": None, "info": None, "message": "Quadrupped Env reset"}
+        self.socket_PC.publisher_cmd( command=cmd )
+        
+        # 2. send action or receive state
+        cmd = {"next": None, "action": action, "info": None, "message": None}
+        self.socket_PC.publisher_cmd( command=cmd )
+        
+        
+        # state after reset
+        # 1. send a cmd that indicates what's next
+        cmd = {"next":self.Socket_config.next_state, "action": None, "info": None, "message": None}
+        self.socket_PC.publisher_cmd( command=cmd )
+        
+        # 2. send action or receive state
+        msg = self.socket_PC.subscriber_env()
+        imu_data = msg["imu_data"]
+        
+        # TODO: build empirical model
+        # thrust = empirical_model_function( action )
+        thrust = np.zeros((1,))
+        obs = np.concatenate((imu_data, thrust))
+
+        return obs.astype(np.float32), {}  # obs: (imu, thrust), info: dict
 
 
     def step(self, action: np.array):
         """
-        action: difference of joint servo degree
-        [[x, x, x, x],[x, x, x, x],[x, x, x, x]]
+        ### Return: obs, reward, done, truncated, info
         """
-
-        # TODO: convert the action into servo degree and send msg to the RPi
-        # action shape should be (3,4) or (3,)
-        servo_degree_max_rate = np.array([self.ABDUCTION_JOINT_MAX_RATE, 
-                                          self.INNER_JOINT_MAX_RATE,
-                                          self.OUTER_JOINT_MAX_RATE])
+        self.step_counter += 1
+        # action to step
+        # 1. send a cmd that indicates what's next
+        cmd = {"next":self.Socket_config.next_action, "action": None, "info": None, "message": "Quadrupped Env reset"}
+        self.socket_PC.publisher_cmd( command=cmd )
         
-        if action.shape == (3,):
-            servo_degree_diff = servo_degree_max_rate * action
-            self.servo_degree += servo_degree_diff
-            
-        elif action.shape == (3,4):
-            servo_degree_diff = np.tile( servo_degree_max_rate.reshape((3,1)), (1,4) )
-            self.servo_degree += servo_degree_diff
+        # 2. send action or receive state
+        cmd = {"next": None, "action": action, "info": None, "message": None}
+        self.socket_PC.publisher_cmd( command=cmd )
+
+        # state
+        # 1. send a cmd that indicates what's next
+        cmd = {"next":self.Socket_config.next_state, "action": None, "info": None, "message": None}
+        self.socket_PC.publisher_cmd( command=cmd )
         
+        # 2. send action or receive state
+        msg = self.socket_PC.subscriber_env()
+        imu_data = msg["imu_data"]
 
-
-
+        # TODO: build empirical model
+        # thrust = empirical_model_function( action )
+        thrust = np.zeros((1,))
+        obs = np.concatenate((imu_data, thrust))
+        
+        # TODO: build reward model
+        # reward = trade-off between speed, stability and thrust
+        reward = None
+        
         # TODO: what is the cornor case of terminated,
         # too large IMU difference, drift from the supposed line?
-        terminated = False
-        truncated = False  # we do not limit the number of steps here
-
-        # TODO: reward = trade-off between speed and stablity
-        # 1. Receive socket msg
-        # 2. Calculate reward function
-        speed_reward = speed_evaluation()
-        stability_reward = stability_evaluation()
-        reward = self.TRADEOFF_PARAM * speed_reward + (1-self.TRADEOFF_PARAM) * stability_reward
-
+        done = False
+        
+        # reach max steps
+        if self.step_counter >= self.max_steps:
+            truncated = True
+        else:
+            truncated = False
+        
+        
         # Optionally we can pass additional info, we are not using that for now
         info = {}
 
-        return (
-            np.array([self.agent_pos]).astype(np.float32),
-            reward,
-            terminated,
-            truncated,
-            info,
-        )
+        return obs, reward, done, truncated, info
+        
 
     def render(self):
         print()

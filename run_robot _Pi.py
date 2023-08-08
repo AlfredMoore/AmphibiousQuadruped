@@ -38,24 +38,34 @@ def main():
     # Env = QuadruppedEnv( Env_config=Env_config, IMU_config=IMU_config )
     
     start_time = time.time()
+    COMM_freq = 100
+    
 
     while True:
-        # 1.publish state
-        imu_data = imu_interface.read_all()        # read 9-axis IMU
-        msg = {"imu_data": imu_data, "info": None}
-        socket_Pi.publisher_env( msg_state=msg )
+        # 1. receive a cmd that indicates what's next
+        cmd = socket_Pi.subscriber_cmd()
+        if cmd["message"] is not None:
+            print(cmd["message"])
+            
+        # 2. receive action or send state
+        # action
+        if cmd["next"]==Socket_config.next_action:
+            cmd = socket_Pi.subscriber_cmd()
+            angle_degree = cmd["action"]
+            hardware_interface.set_actuator_postions_radians(angle_degree)
         
-        time.sleep(0.01)
+        # state
+        if cmd["next"]==Socket_config.next_state:
+            imu_data = imu_interface.read_all()        # read 9-axis IMU
+            msg = {"imu_data": imu_data, "info": None}
+            socket_Pi.publisher_env( msg_state=msg )
+        
+        # time.sleep(1/COMM_freq)
         # data structure from IMU
         # 0x34 - 0x36 : xyz_accelerations
         # 0x37 - 0x39 : xyz_angular_velocity
         # 0x3d - 0x3f : Roll_Pitch_Yaw_xyz
         # 0x51 - 0x54 : Quaterions Q0-Q3
-        
-        # 2.receive action
-        cmd = socket_Pi.subscriber_cmd()
-        angle_degree = cmd["action"]
-        hardware_interface.set_actuator_postions_radians(angle_degree)
 
 
 if __name__ == "__main__":

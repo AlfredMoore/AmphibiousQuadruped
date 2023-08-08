@@ -28,12 +28,16 @@ class PPO_config:
         self.set_adam_eps = True                   # float, default=True, help="Trick 9: set Adam epsilon=1e-5")
         self.use_tanh = int(1)                       # float, default=True, help="Trick 10: tanh activation function")
 
+        self.seed = 10
+        self.env_name = "Amphibious_Quadrupped"
+        self.check_freq = 10
 
 class Env_config:
     def __init__(self) -> None:
         self.quadruped_mode=True
-        self.tradeoff_param=0.5
+        self.tradeoff_param={"speed": 1, "stability": 1, "thrust": 1}
         self.empirical_model=False
+        self.max_steps = 5e3
 
         
 
@@ -59,6 +63,10 @@ class Socket_config:
         self.HOST_IP = "192.168.31.52"
         self.HOST_PORT = 50000
         self.message_rate = 50
+        
+        # next
+        self.next_action = True
+        self.next_state = False
 
         
 
