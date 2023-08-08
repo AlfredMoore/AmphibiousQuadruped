@@ -64,7 +64,7 @@ def evaluate_policy(PPO_config, env, agent, state_norm):
     return evaluate_reward / times
 
 
-def main(PPO_config, quadruppedEnv):
+def train_PPO(PPO_config, quadruppedEnv):
     env = quadruppedEnv
     env_name = "Amphibious_Quadrupped"
     # env_evaluate = gym.make(env_name)  # When evaluating the policy, we need to rebuild an environment
@@ -80,7 +80,7 @@ def main(PPO_config, quadruppedEnv):
     PPO_config.state_dim = env.observation_space.shape[0]
     PPO_config.action_dim = env.action_space.shape[0]
     PPO_config.max_action = float(env.action_space.high[0])
-    PPO_config.max_episode_steps = env._max_episode_steps  # Maximum number of steps per episode
+    PPO_config.max_episode_steps = env.max_episode_steps  # Maximum number of steps per episode
     print("env={}".format(env_name))
     print("state_dim={}".format(PPO_config.state_dim))
     print("action_dim={}".format(PPO_config.action_dim))
@@ -95,7 +95,7 @@ def main(PPO_config, quadruppedEnv):
     agent = PPO_continuous(PPO_config)
 
     # Build a tensorboard
-    writer = SummaryWriter(log_dir='runs/PPO_continuous/env_{}_{}_seed_{}'.format(env_name, PPO_config.policy_dist, seed))
+    # writer = SummaryWriter(log_dir='runs/PPO_continuous/env_{}_{}_seed_{}'.format(env_name, PPO_config.policy_dist, seed))
 
     state_norm = Normalization(shape=PPO_config.state_dim)  # Trick 2:state normalization
     if PPO_config.use_reward_norm:  # Trick 3:reward normalization
@@ -184,7 +184,7 @@ def main(PPO_config, quadruppedEnv):
                 tqdm.write("\n evaluate_num:{} \t evaluate_reward:{} \t".format(evaluate_num, evaluate_reward))
                 # print("\n evaluate_num:{} \t evaluate_reward:{} \t".format(evaluate_num, evaluate_reward))
                 
-                writer.add_scalar('step_rewards_{}'.format(env_name), evaluate_rewards[-1], global_step=total_steps)
+                # writer.add_scalar('step_rewards_{}'.format(env_name), evaluate_rewards[-1], global_step=total_steps)
                 # Save the rewards
                 if evaluate_num % PPO_config.save_freq == 0:
                     np.save('./data_train/PPO_continuous_{}_env_{}_seed_{}.npy'.format(PPO_config.policy_dist, env_name, seed), np.array(evaluate_rewards))

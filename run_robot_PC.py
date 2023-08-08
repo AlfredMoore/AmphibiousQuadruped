@@ -1,9 +1,12 @@
 from rl_algo.quadrupedEnv import QuadruppedEnv
 from communication.SocketInterface_PC_RL import SocketInterface_PC
+from rl_algo.train_PPO import train_PPO
 
 from config import Configuration
 import time
 import numpy as np
+
+
 
 def main():
     
@@ -65,17 +68,8 @@ def main():
         socket_PC.publisher_cmd( command=cmd )
         
     
-    while True:
-        # 1.receive state
-        state = socket_PC.subscriber_env()
-        # TODO: 
-        # thrust = empirical_model_function( action )
-        # obs = np.concatenate((state, thrust))
-        # run PPO algorithm
-         
-        # 2.publish action
-        # TODO: action = PPO(obs)
-        cmd = {"action": action, "info": None}
+
+    train_PPO(PPO_config=PPO_config, quadruppedEnv=Env)
         
         
         

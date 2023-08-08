@@ -2,6 +2,7 @@ import numpy as np
 from config.ServoCalibration import MICROS_PER_RAD, NEUTRAL_ANGLE_DEGREES
 from enum import Enum
 
+
 class PPO_config:
     def __init__(self) -> None:
         self.max_train_steps = int(3e6)                # int, default=int(3e6), help=" Maximum number of training steps")
@@ -32,12 +33,13 @@ class PPO_config:
         self.env_name = "Amphibious_Quadrupped"
         self.check_freq = 10
 
+
 class Env_config:
     def __init__(self) -> None:
         self.quadruped_mode=True
         self.tradeoff_param={"speed": 1, "stability": 1, "thrust": 1}
         self.empirical_model=False
-        self.max_steps = 5e3
+        self.max_episode_steps = 1e3
 
         
 

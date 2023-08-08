@@ -43,7 +43,7 @@ class QuadruppedEnv(gym.Env):
         self.quadruped_mode = Env_config.quadruped_mode
         self.empirical_model = Env_config.empirical_model
         self.TRADEOFF_PARAM = Env_config.tradeoff_param
-        self.max_steps = Env_config.max_steps
+        self.max_episode_steps = Env_config.max_episode_steps
         
         self.IMU_data_range = IMU_config.data_range
         
@@ -207,7 +207,7 @@ class QuadruppedEnv(gym.Env):
         done = False
         
         # reach max steps
-        if self.step_counter >= self.max_steps:
+        if self.step_counter >= self.max_episode_steps:
             truncated = True
         else:
             truncated = False
@@ -220,7 +220,8 @@ class QuadruppedEnv(gym.Env):
         
 
     def render(self):
-        print()
+        # print()
+        pass
 
     def close(self):
         pass
