@@ -10,8 +10,6 @@ PWM servos control
 
 Raspberry Pi 4B
 
-All Python
-
 ### implementation
 
 Socket Communication
